@@ -17,10 +17,6 @@ class Permission:
     MODERATE = 8
     ADMIN = 16
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
 
 class Post(db.Model):
     __tablename__ = 'posts'
@@ -229,23 +225,23 @@ class User(UserMixin, db.Model):
         return hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()
 
     def gravatar(self, size=100, default='identicon', rating='g'):
-        if request.is_secure:
-            url = 'https://secure.gravatar.com/avatar'
-        else:
-            url = 'https://gravatar.com/avatar'
+        
+        url = 'https://secure.gravatar.com/avatar'
+       
+           
         hash = hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()
         return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
             url=url, hash=hash, size=size, default=default, rating=rating)
 
     def follow(self, user):
         if not self.is_following(user):
-            f = Follow(followed=user)
-            self.followed.append(f)
+            f = Follow(follower=self, followed=user)
+            db.session.add(f)
 
     def unfollow(self, user):
         f = self.followed.filter_by(followed_id=user.id).first()
         if f:
-            self.followed.remove(f)
+            db.session.delete(f)
 
     def is_following(self, user):
         if user.id is None:
@@ -259,8 +255,14 @@ class User(UserMixin, db.Model):
         return self.followers.filter_by(
             follower_id=user.id).first() is not None
 
+    @property
+    def followed_posts(self):
+        return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
+            .filter(Follow.follower_id == self.id)
+
     def __repr__(self):
         return '<User %r>' % self.username
+
 
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permissions):
@@ -270,3 +272,8 @@ class AnonymousUser(AnonymousUserMixin):
         return False
 
 login_manager.anonymous_user = AnonymousUser
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
