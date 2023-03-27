@@ -21,7 +21,7 @@ The app is built using Flask, SQLAlchemy, and Bootstrap. It uses Flask-WTF for f
 ## Installation
 1. Clone this repository:
 
-`git clone https://github.com/your-username/flask-social-media-app.git`
+`git clone https://github.com/Faizol-Shobola/Flasky.git`
 
 2. Activate virtual environment
 
